@@ -1,6 +1,3 @@
-# Config berisi kredensial database
-config.php
-
 # Error log server
 error_log
 
