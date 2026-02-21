@@ -35,3 +35,6 @@ desktop.ini
 
 # CGI
 cgi-bin/
+
+# Auto push script
+auto-git-push.bat
