@@ -1,5 +1,9 @@
 <?php
-if (isset($_POST['urlpage']) && $_POST['urlpage'] != '') {
+if (isset($_POST['metodelp']) && $_POST['metodelp'] != '') {
+	# URL page bisa kosong jika metode = Komponen HTML
+	$postUrlPage = $_POST['urlpage'] ?? '';
+	$postHtmlCode = $_POST['page_html'] ?? '';
+
 	# Cek apakah page_url sudah dipakai page lain atau belum
 	if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 		# Edit Page
@@ -7,14 +11,15 @@ if (isset($_POST['urlpage']) && $_POST['urlpage'] != '') {
 			`page_judul` = '".cek($_POST['judulpage'])."',
 			`page_diskripsi` = '".cek($_POST['diskripsipage'])."',
 			`page_url` = '".cekurlpage($_POST['alamatpage'],$_GET['edit'])."',
-			`page_iframe` = '".cek($_POST['urlpage'])."',
+			`page_iframe` = '".cek($postUrlPage)."',
 			`page_method`= ".cek($_POST['metodelp']).",
-			`page_fr` = '".serialize($_POST['fr'])."'
+			`page_fr` = '".serialize($_POST['fr'])."',
+			`page_html` = '".cek($postHtmlCode)."'
 			WHERE `page_id`=".$_GET['edit']);
 	} else {
 		# Simpan di database
-		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`page_fr`) VALUES 
-			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['alamatpage'])."','".cek($_POST['urlpage'])."',".cek($_POST['metodelp']).",'".serialize($_POST['fr'])."')");
+		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`page_fr`,`page_html`) VALUES 
+			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['alamatpage'])."','".cek($postUrlPage)."',".cek($_POST['metodelp']).",'" .serialize($_POST['fr'])."','".cek($postHtmlCode)."')");
 	}
 
 	if ($cek === false) {
@@ -64,12 +69,6 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    </div>
 	  </div>
 	  
-	  <div class="mb-3 row">
-	    <label class="col-sm-2 col-form-label">URL Sales Page</label>
-	    <div class="col-sm-10">
-	      <input type="text" class="form-control" name="urlpage" value="<?= $page['page_iframe'] ??= 'https://';?>">
-	    </div>
-	  </div>
 		<div class="mb-3 row">
 	    <label class="col-sm-2 col-form-label">Metode</label>
 	    <div class="col-sm-5">
@@ -77,12 +76,13 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    	$metode = array(
 	    		1 => 'Gunakan iFrame',
 	    		2 => 'Inject URL',
-	    		3 => 'Redirect URL'
+	    		3 => 'Redirect URL',
+	    		4 => 'Komponen HTML'
 	    	);
 
 	    	$metode = apply_filter('page_metode_lp',$metode);
 
-	    	echo '<select name="metodelp" id="metodelp" class="form-select">';
+	    	echo '<select name="metodelp" id="metodelp" class="form-select" onchange="toggleMetode()">';
 	    	foreach ($metode as $key => $value) {
 	    		echo '<option value="'.$key.'"';
 	    		if (isset($page['page_method']) && $page['page_method'] == $key) {
@@ -92,6 +92,15 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    	}
 	    	echo '</select>';
 	    	?>					    	
+	    </div>
+	  </div>
+
+	  <!-- Fields for URL-based methods (iFrame, Inject, Redirect) -->
+	  <div id="urlFields">
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">URL Sales Page</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="urlpage" value="<?= $page['page_iframe'] ??= 'https://';?>">
 	    </div>
 	  </div>
 	  <div class="mb-3 row">
@@ -109,8 +118,40 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    	<?php endfor; ?>
 	      <small class="form-text text-muted">Ubah text landing page (hanya berlaku untuk metode Inject URL)</small>
 	    </div>
-	  </div>  
+	  </div>
+	  </div>
+
+	  <!-- Fields for HTML method -->
+	  <div id="htmlFields" style="display:none;">
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Kode HTML</label>
+	    <div class="col-sm-10">
+	      <textarea name="page_html" id="page_html" class="form-control" rows="16" 
+	        style="font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.5; background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 1rem;"
+	        placeholder="Masukkan kode HTML lengkap di sini..."><?= htmlspecialchars($page['page_html'] ?? ''); ?></textarea>
+	      <small class="form-text text-muted"><i class="fas fa-info-circle"></i> Masukkan kode HTML lengkap (termasuk &lt;html&gt;, &lt;head&gt;, &lt;body&gt;). Shortcode yang tersedia: <code>[nama]</code>, <code>[email]</code>, <code>[whatsapp]</code>, <code>[kodeaff]</code></small>
+	    </div>
+	  </div>
+	  </div>
+
 	  <input type="submit" class="btn btn-success" name="" value=" SIMPAN ">
+
+	  <script>
+	  function toggleMetode() {
+	    var val = document.getElementById('metodelp').value;
+	    var urlFields = document.getElementById('urlFields');
+	    var htmlFields = document.getElementById('htmlFields');
+	    if (val == '4') {
+	      urlFields.style.display = 'none';
+	      htmlFields.style.display = 'block';
+	    } else {
+	      urlFields.style.display = 'block';
+	      htmlFields.style.display = 'none';
+	    }
+	  }
+	  // Run on page load
+	  document.addEventListener('DOMContentLoaded', toggleMetode);
+	  </script>
 	</div>
 </div>
 </form>

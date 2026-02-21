@@ -40,6 +40,10 @@ if (version_compare($settings['ver'], '1.0.8') < 0) {
 	db_query("ALTER TABLE `sa_page` ADD `pro_img` VARCHAR(50) NULL");
 }
 
+if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_html'")) {
+	db_query("ALTER TABLE `sa_page` ADD `page_html` LONGTEXT NULL");
+}
+
 if (version_compare($settings['ver'], '1.0.9') < 0) {
 	db_query("ALTER TABLE `sa_artikel` ADD `art_writer` bigint(20) NOT NULL default 1");
 }

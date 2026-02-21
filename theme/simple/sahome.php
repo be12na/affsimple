@@ -209,6 +209,21 @@ switch ($metode) {
 		}
 		die();
 		break;
+	case '4':
+		// Komponen HTML — render raw HTML from page_html column
+		$htmlContent = $page['page_html'] ?? '';
+		if (!empty($htmlContent)) {
+			// Apply sponsor shortcodes if available
+			if (isset($extsponsor) && is_array($extsponsor)) {
+				foreach ($extsponsor as $key => $value) {
+					$htmlContent = str_replace('['.$key.']', ($value??=''), $htmlContent);
+				}
+			}
+			$showlp = $htmlContent;
+		} else {
+			$showlp = '<p style="text-align:center;padding:40px;">Konten HTML belum diisi.</p>';
+		}
+		break;
 	default:
 		if (function_exists('lp_'.$metode)) {
 			$showlp = call_user_func('lp_'.$metode);
