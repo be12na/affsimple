@@ -80,8 +80,6 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    	<?php
 	    	$metode = array(
 	    		1 => 'Gunakan iFrame',
-	    		2 => 'Inject URL',
-	    		3 => 'Redirect URL',
 	    		4 => 'Komponen HTML'
 	    	);
 
@@ -100,28 +98,12 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    </div>
 	  </div>
 
-	  <!-- Fields for URL-based methods (iFrame, Inject, Redirect) -->
+	  <!-- Fields for iFrame method -->
 	  <div id="urlFields">
 	  <div class="mb-3 row">
 	    <label class="col-sm-2 col-form-label">URL Sales Page</label>
 	    <div class="col-sm-10">
 	      <input type="text" class="form-control" name="urlpage" value="<?= $page['page_iframe'] ??= 'https://';?>">
-	    </div>
-	  </div>
-	  <div class="mb-3 row">
-	    <label class="col-sm-2 col-form-label">Find and Replace</label>
-	    <div class="col-sm-10">
-	    	<?php 
-	    	if (isset($page['page_fr']) && !empty($page['page_fr'])) {
-	    		$fr = unserialize($page['page_fr']);
-	    	}
-	    	for ($i=1; $i <= 5; $i++) :?>
-	    	<div class="input-group">
-	      	<input type="text" class="form-control" placeholder="find" name="fr[<?= $i;?>][find]" value="<?= $fr[$i]['find'] ??= '';?>">
-	      	<input type="text" class="form-control" placeholder="replace" name="fr[<?= $i;?>][replace]" value="<?= $fr[$i]['replace'] ??= '';?>">
-	      </div>
-	    	<?php endfor; ?>
-	      <small class="form-text text-muted">Ubah text landing page (hanya berlaku untuk metode Inject URL)</small>
 	    </div>
 	  </div>
 	  </div>

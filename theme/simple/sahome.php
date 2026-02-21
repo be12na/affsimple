@@ -163,13 +163,7 @@ if (isset($page) && isset($showpage)) {
 	}
 
 	$metode = $settings['metodelp']??=1;
-	$fr = $settings['fr']??='';
-	switch ($metode) {
-		case '1':	$targeturl = $settings['homepage']; break;
-		case '2': $targeturl = $settings['urltarget']; break;
-		case '3': $targeturl = $settings['urlredirect']; break;
-		default: $targeturl = $settings['homepage']; break;
-	}
+	$targeturl = $settings['homepage'] ?? '';
 }
 
 switch ($metode) {
@@ -181,33 +175,6 @@ switch ($metode) {
 		$footer.
 		'</body>
 		</html>';
-		break;
-	case '2':			
-		if (isset($targeturl) && !empty($targeturl)) {
-			$showlp = getCachedData($targeturl);
-			if (isset($extsponsor)) {
-				#$sponsor = extractdata($datasponsor);			
-
-				if (isset($fr) && !empty($fr)) {
-	    		$fr = unserialize($fr);
-	    		if (is_array($fr) && count($fr) > 0) {
-		    		foreach ($fr as $fr) {
-		    			$showlp = str_replace($fr['find'], $fr['replace'], $showlp);
-		    		}
-	    		}
-	    	}	
-
-	    	foreach ($extsponsor as $key => $value) {
-					$showlp = str_replace('['.$key.']', ($value??=''), $showlp);
-				}    	
-			}
-		}
-		break;
-	case '3' :			
-		if (isset($targeturl) && !empty($targeturl)) {
-			header("Location:".$targeturl);
-		}
-		die();
 		break;
 	case '4':
 		// Komponen HTML — render raw HTML from page_html column

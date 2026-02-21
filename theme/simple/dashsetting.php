@@ -180,10 +180,7 @@ if (isset($_POST['judulweb']) && !empty($_POST['judulweb'])) {
 					    <div class="col-sm-5">
 					    	<?php
 					    	$metode = array(
-					    		1 => 'Gunakan iFrame',
-					    		2 => 'Inject URL',
-					    		3 => 'Redirect URL'
-					    	);
+				    		1 => 'Gunakan iFrame'
 
 					    	if (isset($settings['url_produk']) && !empty($settings['url_produk'])) {
 					    		$metode['produk'] = 'Halaman Produk';
@@ -215,41 +212,7 @@ if (isset($_POST['judulweb']) && !empty($_POST['judulweb'])) {
 						  </div>
 						</div>
 
-					  <div class="opsi2 <?= $dnone[2] ??= 'd-none';?>">
-							<div class="mb-3 row">
-						    <label class="col-sm-2 col-form-label">URL Target</label>
-						    <div class="col-sm-10">
-						      <input type="text" class="form-control" name="urltarget" value="<?= $settings['urltarget'] ??= '';?>">
-						      <small class="form-text text-muted">Alamat URL yang akan muncul di depan. Contoh: https://cafebisnis.com</small>
-						    </div>
-						  </div>
-						  <div class="mb-3 row">
-						    <label class="col-sm-2 col-form-label">Find and Replace</label>
-						    <div class="col-sm-10">
-						    	<?php 
-						    	if (isset($settings['fr'])) {
-						    		$fr = unserialize($settings['fr']);
-						    	}
-						    	for ($i=1; $i <= 5; $i++) :?>
-						    	<div class="input-group">
-						      	<input type="text" class="form-control" placeholder="find" name="fr[<?= $i;?>][find]" value="<?= $fr[$i]['find'] ??= '';?>">
-						      	<input type="text" class="form-control" placeholder="replace" name="fr[<?= $i;?>][replace]" value="<?= $fr[$i]['replace'] ??= '';?>">
-						      </div>
-						    	<?php endfor; ?>
-						      <small class="form-text text-muted">Ubah text landing page</small>
-						    </div>
-						  </div>
-						</div>
 
-						<div class="opsi3 <?= $dnone[3] ??= 'd-none';?>">
-							<div class="mb-3 row">
-						    <label class="col-sm-2 col-form-label">URL Redirect</label>
-						    <div class="col-sm-10">
-						      <input type="text" class="form-control" name="urlredirect" value="<?= $settings['urlredirect'] ??= '';?>">
-						      <small class="form-text text-muted">Alamat URL tujuan redirect. Contoh: https://cafebisnis.com</small>
-						    </div>
-						  </div>
-						</div>
 
 						<?php do_action('metodelp');?>
 					  

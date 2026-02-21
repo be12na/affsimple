@@ -3,7 +3,7 @@ if (!defined('IS_IN_SCRIPT')) { die(); exit(); }
 if ($datamember['mem_role'] < 9) { die(); exit(); }
 $head['pagetitle']='Setting Page';
 showheader($head);
-$method = array('','Redirect','iFrame','Inject');
+$method = array('','iFrame','','','HTML');
 
 if (isset($_POST['urlpage']) && $_POST['urlpage'] != '') {
 	# Cek apakah page_url sudah dipakai page lain atau belum
