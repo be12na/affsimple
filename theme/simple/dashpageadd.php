@@ -4,6 +4,11 @@ if (isset($_POST['metodelp']) && $_POST['metodelp'] != '') {
 	$postUrlPage = $_POST['urlpage'] ?? '';
 	$postHtmlCode = $_POST['page_html'] ?? '';
 
+	# Auto-create page_html column if not exists
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_html'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_html` LONGTEXT NULL");
+	}
+
 	# Cek apakah page_url sudah dipakai page lain atau belum
 	if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 		# Edit Page

@@ -97,6 +97,11 @@ if (isset($_POST['urlpage']) && !empty($_POST['urlpage']) && isset($_POST['judul
 	}
 	$dbkomisi = serialize($komisi);
 
+	# Auto-create page_html column if not exists
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_html'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_html` LONGTEXT NULL");
+	}
+
 	if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 		# Edit Page
 		$cek = db_query("UPDATE `sa_page` SET 
