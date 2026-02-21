@@ -1,0 +1,37 @@
+# Config berisi kredensial database
+config.php
+
+# Error log server
+error_log
+
+# Cache
+cache/*
+!cache/.gitkeep
+
+# Upload files
+upload/*
+!upload/.gitkeep
+
+# File download
+filedownload/*
+!filedownload/index.php
+
+# Cookie file
+sacookie.cok
+
+# ZIP releases
+*.zip
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Editor/IDE
+.vscode/
+*.swp
+*.swo
+*~
+
+# CGI
+cgi-bin/

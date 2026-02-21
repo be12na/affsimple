@@ -1,0 +1,454 @@
+<?php 
+if (!defined('IS_IN_SCRIPT')) { die(); exit(); }
+$theslug = '';
+$slugartikel = $settings['url_artikel'] ??= 'artikel';
+if (isset($slug[1]) && ($slug[1] == 'kategori' || $slug[1] == $slugartikel)) {
+	$jenis = $slug[1];
+	if (isset($slug[2]) && !empty($slug[2])) {
+		$theslug = $slug[2];
+	} 
+} elseif(isset($slug[2]) && ($slug[2] == 'kategori' || $slug[2] == $slugartikel)) {
+	$jenis = $slug[2];
+	if (isset($slug[3]) && !empty($slug[3])) {
+		$theslug = $slug[3];
+	}
+}
+
+if ($iduser = is_login()) {
+	$datamember = db_row("SELECT * FROM `sa_member` 
+		LEFT JOIN `sa_sponsor` ON `sa_sponsor`.`sp_mem_id` = `sa_member`.`mem_id` WHERE `mem_id`=".$iduser);
+	$datasponsor = db_row("SELECT * FROM `sa_member` WHERE `mem_id`=".$datamember['sp_sponsor_id']);
+
+	$exdatamember = extractdata($datamember);
+	$exdatamember['kodeaff'] = $weburl.$exdatamember['kodeaff'];
+
+  if (isset($datasponsor['mem_id']) && $datasponsor['mem_id'] > 0) {
+    $exdatasponsor = extractdata($datasponsor);
+    $exdatasponsor['kodeaff'] = $weburl.$exdatasponsor['kodeaff'];
+  }
+}
+
+if ($theslug != '' && count($_GET) == 0) {
+	$showadminbutton = '';
+
+	if ($jenis == $slugartikel) {
+		$data = db_row("SELECT * FROM `sa_artikel` 
+			LEFT JOIN `sa_member` ON `sa_artikel`.`art_writer` = `sa_member`.`mem_id`
+			WHERE `art_slug`='".cek($theslug)."'");
+		$role = array('Visitor','Free Member','Premium Member');
+		if (isset($data['art_id'])) {
+			# Munculkan halaman artikel
+			$showfile = 'art_single.php';
+			$showtitle = $data['art_judul'];
+			if ($data['art_product'] == 0) {
+				if (!empty($data['art_role'])) {
+					if (isset($datamember) && $data['art_role'] <= $datamember['mem_status']) {
+						$showartikel = $data['art_konten'];
+					} else {	
+						if (is_login()) {
+							$action = '<a href="'.$weburl.'dashboard/produklist" class="btn btn-success">Order produk dulu</a>';
+						} else {
+							$action = '<a href="'.$weburl.'login?redirect='.$slugartikel.'/'.$data['art_slug'].'" class="btn btn-success">Silahkan login dulu</a>';
+						}
+									
+						$showartikel = '
+						<div class="card mt-3">
+							<div class="card-body text-center">
+								<p>'.pendekin(strip_tags($data['art_konten']),170).'</p>
+								<p>Maaf, artikel ini hanya untuk '.$role[$data['art_role']].'.</p>
+								'.$action.'
+							</div>
+						</div>';
+					}			
+				} else {
+					$showartikel = $data['art_konten'];
+				}
+			} else {
+				# Cek apakah sudah beli produk
+				$dataproduk = db_row("SELECT * FROM `sa_page` WHERE `page_id`=".$data['art_product']);
+				$namaproduk = $dataproduk['page_judul'];
+				if (isset($datamember)) {
+					$order = db_row("SELECT * FROM `sa_order` WHERE `order_status`=1 AND `order_idmember`=".$datamember['mem_id']." 
+						AND `order_idproduk`=".$data['art_product']);
+					if (isset($order['order_id'])) {
+						$showartikel = $data['art_konten'];
+					} else {
+						# Munculkan warning
+						if (is_login()) {
+							$action = '<a href="'.$weburl.'order/'.$dataproduk['page_url'].'" class="btn btn-success">Order '.$namaproduk.' dulu</a>';
+						} else {
+							$action = '<a href="'.$weburl.'login?redirect='.$slugartikel.'/'.$data['art_slug'].'" class="btn btn-success">Silahkan login dulu</a>';
+						}
+						$showartikel = '
+						<div class="card mt-3">
+							<div class="card-body text-center">
+								<p>'.pendekin(strip_tags($data['art_konten']),170).'</p>
+								<p>Maaf, artikel ini hanya untuk pembeli produk '.$namaproduk.'.</p>
+								'.$action.'
+							</div>
+						</div>';
+					}
+				} else {
+					# Munculkan warning
+					$showartikel = '
+						<div class="card">
+							<div class="card-body text-center">
+								<p>'.pendekin(strip_tags($data['art_konten']),170).'</p>
+								<p>Maaf, artikel ini hanya untuk pembeli produk '.$namaproduk.'.</p>
+								<a href="'.$weburl.'login?redirect='.$slugartikel.'/'.$data['art_slug'].'" class="btn btn-success">Silahkan login dulu</a>
+							</div>
+						</div>';
+				}
+			}
+
+			if (isset($datamember) && $datamember['mem_role'] >=2) {
+				if ($datamember['mem_role'] == 2 && $data['art_writer'] != $datamember['mem_id']) {
+					# diem aja
+				} else {
+					$showadminbutton = '
+					<div class="mt-3 mb-3">
+					<a href="'.$weburl.$slugartikel.'/?edit='.$data['art_id'].'" class="btn btn-success mb-3">Edit '.ucwords($slugartikel).'</a> &nbsp;				
+					<a href="'.$weburl.$slugartikel.'/?del='.$data['art_id'].'"  onclick="javascript:return confirm(\'Anda yakin ingin menghapus \\\''.$data['art_judul'].'\\\' ?\')" class="btn btn-danger mb-3">Hapus '.ucwords($slugartikel).'</a>
+					</div>
+					';
+				}
+			}
+
+			# Ubah shortcode artikel			
+			# Handle Data Default
+		  $arrfield = array('nama','email','whatsapp','kodeaff');
+		  foreach ($arrfield as $arrfield) {      
+		    $showartikel = str_replace('[member_'.$arrfield.']',($exdatamember[$arrfield]??''),$showartikel);
+		    $showartikel = str_replace('[sponsor_'.$arrfield.']',($exdatasponsor[$arrfield]??=''),$showartikel);
+		  }
+
+		  # Handle data lain
+		  $form = db_select("SELECT * FROM `sa_form` WHERE `ff_field` NOT IN ('nama','email','whatsapp','kodeaff','password')");
+
+		  foreach ($form as $form) {
+		    $valmember = $valsponsor = '';
+		    if (isset($exdatamember[$form['ff_field']])) {
+		      $valmember = $exdatamember[$form['ff_field']];
+		    }
+		    if (isset($exdatasponsor[$form['ff_field']])) {
+		      $valsponsor = $exdatasponsor[$form['ff_field']];
+		    }
+		    
+		    $showartikel = str_replace('[member_'.$form['ff_field'].']',$valmember,$showartikel);
+		    $showartikel = str_replace('[sponsor_'.$form['ff_field'].']',$valsponsor,$showartikel);
+		  }
+
+		  # Handle data tambahan lain
+		  if (isset($datalain) && is_array($datalain) && count($datalain) > 0) {
+		    foreach ($datalain as $key => $value) {
+		      $showartikel = str_replace('['.$key.']',$value,$showartikel);
+		    }
+		  }	
+			
+		} else {
+			# Munculkan halaman 404
+			$showfile = 'art_404.php';
+		}
+	} elseif ($jenis == 'kategori') {
+		$data = db_row("SELECT * FROM `sa_kategori` WHERE `kat_slug`='".cek($theslug)."'");
+		if (isset($data['kat_id'])) {
+			# Munculkan halaman kategori
+			$showfile = 'art_kategori.php';
+			$showtitle = $data['kat_nama'];
+			if (isset($datamember) && $datamember['mem_role'] >= 2) {
+				$showadminbutton = '
+				<div class="mt-3 mb-3">
+				<a href="'.$weburl.$slugartikel.'/?add='.$data['kat_id'].'" class="btn btn-success mb-3">Tambah '.ucwords($slugartikel).'</a>
+				<a href="'.$weburl.'kategori/?add='.$data['kat_id'].'" class="btn btn-primary mb-3">Tambah Kategori</a>
+				<a href="'.$weburl.'kategori/?edit='.$data['kat_id'].'" class="btn btn-primary mb-3">Edit Kategori</a> &nbsp;
+				<a href="'.$weburl.'kategori/?del='.$data['kat_id'].'"  onclick="javascript:return confirm(\'Anda yakin ingin menghapus \\\''.$data['kat_nama'].'\\\' dan semua artikel di dalamnya?\')" class="btn btn-danger mb-3">Hapus Kategori & '.ucwords($slugartikel).'</a>
+				</div>
+				';
+
+				if ($datamember['mem_role'] == 2) {
+					# Hanya bisa isi artikel saja
+					$showadminbutton = '
+					<div class="mt-3 mb-3">
+						<a href="'.$weburl.$slugartikel.'/?add='.$data['kat_id'].'" class="btn btn-success mb-3">Tambah '.ucwords($slugartikel).'</a>
+					</div>';
+				}
+			}
+		} else {
+			# Munculkan halaman 404
+			$showfile = 'art_404.php';
+			$showtitle = 'Not Found';
+		}
+	}
+} else {
+	$showfile = 'art_home.php';
+	$showtitle = ucwords($slugartikel);
+}
+?>
+<!DOCTYPE html>
+<html class="full" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" type="image/x-icon" href="<?= $weburl;?>img/<?= $favicon;?>" />
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title><?= $showtitle;?></title>
+    <?php if (!isset($_GET['add']) && !isset($_GET['edit'])) : ?>
+    <link rel="StyleSheet" href="<?= $weburl;?>dtree.css" type="text/css" />
+		<script type="text/javascript" src="<?= $weburl;?>dtree.js"></script>
+		<?php endif; ?>
+		<!-- Bootstrap Core CSS -->
+    <link href="<?= $weburl;?>bootstrap-5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?=$weburl;?>fontawesome/css/fontawesome.min.css" rel="stylesheet" />
+	  <link href="<?=$weburl;?>fontawesome/css/regular.min.css" rel="stylesheet" />
+	  <link href="<?=$weburl;?>fontawesome/css/solid.min.css" rel="stylesheet" />
+	  <link href="<?=$weburl;?>editor/css/froala_editor.pkgd.min.css" rel="stylesheet" type="text/css" />
+		<link href="<?=$weburl;?>editor/css/froala_style.min.css" rel="stylesheet" type="text/css" />
+		
+		<style type="text/css">
+			a[id="fr-logo"] {
+  height:1px !important;
+}
+p[data-f-id="pbf"] {
+  height:1px !important;
+}
+a[href*="www.froala.com"] {
+  height:1px !important;
+  background: #fff !important
+}
+		</style>
+	
+</head>
+
+<body>
+
+  <nav class="navbar <?php if (!isset($_GET['edit']) && !isset($_GET['add'])) { echo 'sticky-top'; } ?> navbar-expand-md bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><img src="<?php echo $weburl;?>img/<?= $logoweb;?>" alt="Dashboard" height="45"></a>
+      <button class="navbar-toggler"  type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarColor01">
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="<?= $weburl;?>">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="<?= $weburl.$slugartikel;?>"><?= ucwords($slugartikel);?></a>
+          </li>  
+          <?php if (is_login()) :?>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="<?= $weburl;?>dashboard">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="<?= $weburl;?>logout">Logout</a>
+          </li>
+          <?php else: ?>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="<?= $weburl;?>login?redirect=<?=$urlslug;?>">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="<?= $weburl;?>register">Register</a>
+          </li>
+          <?php endif; ?>
+        </ul>
+      </div>
+    </div>
+  </nav>
+	<div class="container-fluid p-md-5">
+		<div class="row">			
+			<div class="col-md-8 col-lg-9 order-md-2 mb-3">
+				<?php	
+				if (isset($_GET['del']) && is_numeric($_GET['del']) && is_login()) {
+					if ($slug[1] == $slugartikel) {
+						$cek = db_query("DELETE FROM `sa_artikel` WHERE `art_id`=".$_GET['del']);
+						if ($cek === false) {
+			        echo '
+			        <div class="alert alert-danger alert-dismissible fade show" id="peringatan">
+			          <strong>Error!</strong> '.db_error().'
+			          <button type="button" class="btn-close" id="tutup"></button>
+			        </div>';
+			      } else {
+			        echo '
+			        <div class="alert alert-success alert-dismissible fade show" id="peringatan">
+			          <strong>Ok!</strong> '.ucwords($slugartikel).' telah dihapus
+			          <button type="button" class="btn-close" id="tutup"></button>
+			        </div>';
+			      }
+					} else {
+						$cek = db_query("DELETE FROM `sa_kategori` WHERE `kat_id`=".$_GET['del']);
+						if ($cek === false) {
+							$cek = db_query("DELETE FROM `sa_artikel` WHERE `art_kat_id`=".$_GET['del']);
+			        echo '
+			        <div class="alert alert-danger alert-dismissible fade show" id="peringatan">
+			          <strong>Error!</strong> '.db_error().'
+			          <button type="button" class="btn-close" id="tutup"></button>
+			        </div>';
+			      } else {
+			        echo '
+			        <div class="alert alert-success alert-dismissible fade show" id="peringatan">
+			          <strong>Ok!</strong> Kategori telah dihapus
+			          <button type="button" class="btn-close" id="tutup"></button>
+			        </div>';
+			      }
+					}
+				}
+				include('dashartikel/'.$showfile);
+				?>
+			</div>
+			<?php if (!isset($_GET['add']) && !isset($_GET['edit'])) : ?>
+			<div class="col-md-4 col-lg-3 order-md-1">
+				<div class="card">
+					<div class="card-body">
+						<div class="dtree">
+							<p><a href="javascript: d.openAll();">open all</a> | <a href="javascript: d.closeAll();">close all</a></p>
+							
+							<script type="text/javascript">
+								<!--
+
+								d = new dTree('d');
+								d.add(0,-1,'Kategori <?=ucwords($slugartikel);?>');
+								<?php 
+								$kat = db_select("SELECT * FROM `sa_kategori` ORDER BY `kat_parent_id`");								
+								if (count($kat) > 0) {
+									foreach ($kat as $kat) {
+										echo "d.add(".$kat['kat_id'].",".$kat['kat_parent_id'].",'".$kat['kat_nama']."','".$weburl.'kategori/'.$kat['kat_slug']."');"."\n";
+									}
+								}
+
+								$maxkat = db_var("SELECT `kat_id` FROM `sa_kategori` ORDER BY `kat_id` DESC LIMIT 0,1");
+
+								$art = db_select("SELECT * FROM `sa_artikel` ORDER BY `art_tglpublish`");
+								if (count($art) > 0) {
+									foreach ($art as $art) {
+										echo "d.add(".($maxkat+$art['art_id']).",".$art['art_kat_id'].",'".$art['art_judul']."','".$weburl.$slugartikel.'/'.$art['art_slug']."');"."\n";
+									}
+								}
+
+								if (isset($datamember['mem_role']) && $datamember['mem_role'] == 9) {
+									echo "d.add(99999,0,'Tambah Kategori','".$weburl."kategori/?add=0');";
+								}
+								?>								
+								document.write(d);
+
+								//-->
+							</script>
+						
+						</div>
+					</div>
+				</div>
+			</div>
+			<?php endif; ?>
+		</div>
+	</div>	
+	<!-- Modal -->
+	<div class="modal fade" id="peringatan" tabindex="-1" aria-labelledby="konfirmasilabel" aria-hidden="true">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="konfirmasilabel">JUDUL</h5>
+	        <button type="button" id="tutup">
+	          <span aria-hidden="true">&times;</span>
+	        </button>
+	      </div>
+	      <div class="modal-body">ISI
+	      </div>
+	      <div class="modal-footer">        
+	        <a href="#" class="btn btn-secondary delbutton">Hapus</a>
+	        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="tutup">Batal</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+
+	<script src="<?= $weburl;?>bootstrap-5.3.3/js/bootstrap.bundle.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<?php	if (isset($datamember) && $datamember['mem_role'] >= 2) :?>
+	<script type="text/javascript" src="<?=$weburl;?>editor/js/froala_editor.pkgd.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+	    new FroalaEditor('#editor', {
+	      imageUploadURL: '/upload_image.php',
+	      imageUploadParams: {
+	        id: 'my_editor'
+	      },
+	      codeViewKeepOriginal: true,
+        htmlUntouched: true,
+        htmlAllowedTags: ['.*'], // Allow all HTML tags
+      	htmlAllowedAttrs: ['.*'], // Allow all attributes
+        htmlRemoveTags: [],
+	      events: {
+	        'image.beforeUpload': function (files) {
+	          var editor = this;
+
+	          // Create a FormData object.
+	          var formData = new FormData();
+
+	          // Append the uploaded image to the form data.
+	          formData.append('file', files[0]);
+
+	          // Get the article title and append it to the form data.
+	          var judulArtikel = document.getElementById('judul').value;
+	          formData.append('judul', judulArtikel);
+
+	          // Make the AJAX request.
+	          fetch('/upload_image.php', {
+	            method: 'POST',
+	            body: formData
+	          })
+	          .then(response => response.json())
+	          .then(data => {
+	            if (data.link) {
+	              // Insert the image into the editor.
+	              editor.image.insert(data.link, null, null, editor.image.get());
+	            } else {
+	              console.error('Upload failed:', data.error);
+	            }
+	          })
+	          .catch(error => {
+	            console.error('Error:', error);
+	          });
+
+	          // Prevent the default behavior.
+	          return false;
+	        }
+	      }
+	    });
+	  });
+  </script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+		  $("button").on("click", function() {
+			  $("#peringatan").remove();
+			} );
+			
+			$('input[type=file]').on('change', function() {
+	        // Mendapatkan nama input file yang dipilih
+	        var inputName = $(this).attr('name');
+	        // Mendapatkan file yang dipilih
+	        var file = $(this).prop('files')[0];
+	        // Membuat elemen gambar untuk menampilkan preview
+	        var img = $('<img>', {
+	            class: 'img-fluid img-thumbnail',
+	            style: 'max-width: 200px',
+	            alt: inputName
+	        });
+	        // Membuat objek URL untuk file yang dipilih
+	        var url = URL.createObjectURL(file);
+	        // Menambahkan URL ke elemen gambar
+	        img.attr('src', url);
+	        // Menambahkan elemen gambar ke div preview yang sesuai
+	        $('#preview' + inputName).empty().append(img);
+	    });
+		});
+	</script>
+	<?php endif;?>
+	<script>
+    document.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+    });
+	</script>
+</body>
+</html>
