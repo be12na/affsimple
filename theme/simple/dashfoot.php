@@ -1,7 +1,12 @@
 <!-- Content End -->
 </div>
+</div><!-- /.sa-page-wrapper -->
+
+<footer class="sa-footer">
+  &copy; <?= date('Y');?> — Powered by AffSimple
+</footer>
+
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
-<!-- <script src='https://code.jquery.com/mobile/git/jquery.mobile-git.js'></script> -->
 <script src='https://code.jquery.com/ui/1.10.3/jquery-ui.min.js'></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js'></script>
 <script src="<?= $weburl;?>bootstrap-5.3.3/js/bootstrap.bundle.min.js"></script>

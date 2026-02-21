@@ -227,8 +227,8 @@ function modul_grafikvisitor($judulmodul = 'Pengunjung & Pendaftar 30 hari terak
                 legend: { position: \'top\' },
                 chartArea:{left:70,top:10,width:\'90%\',height:\'70%\'}, // Sesuaikan lebar chartArea
                 series: {
-                    0: { color: \'#4285F4\' }, // Warna untuk Pengunjung (biru Google)
-                    1: { color: \'#EA4335\' }  // Warna untuk Pendaftar (merah Google)
+                    0: { color: \'#6366f1\' }, // Warna untuk Pengunjung (indigo)
+                    1: { color: \'#8b5cf6\' }  // Warna untuk Pendaftar (purple)
                 }
             };
             

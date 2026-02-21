@@ -7,7 +7,7 @@ $showdefault = 'YES';
 if (isset($settings['homecanvas']) && !empty($settings['homecanvas'])) {
   $homecanvas = json_decode($settings['homecanvas'],TRUE);
   if (is_array($homecanvas) && count($homecanvas) > 0) {
-    echo '<div class="row">';
+    echo '<div class="row g-3 sa-animate">';
     foreach ($homecanvas as $modul) {      
       if (function_exists('modul_'.$modul['moduleId'])) {
         if (isset($settings[$modul['canvasId']])) {
@@ -25,7 +25,7 @@ if (isset($settings['homecanvas']) && !empty($settings['homecanvas'])) {
         echo call_user_func('modul_'.$modul['moduleId'],$modul['canvasId']);
       } else {
         echo '<div class="col-md-4">
-        Modul '.$modul['moduleId'].' tidak ada';
+        <div class="card"><div class="card-body"><span class="text-muted">Modul '.$modul['moduleId'].' tidak ada</span></div></div>';
       }
       echo '</div>';
     } 
@@ -38,33 +38,35 @@ if ($showdefault == 'YES') :
   # Tampilkan Home Default
 ?>
 
-<div class="row">
-  <div class="col">
-    <?= modul_informasi(); ?>
+<div class="sa-animate">
+  <div class="row g-3 mb-3">
+    <div class="col-12">
+      <?= modul_informasi(); ?>
+    </div>
   </div>
-</div>
 
-<div class="row">
-  <div class="col-md-6">
-    <?= modul_affiliasi(); ?>
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <?= modul_affiliasi(); ?>
+    </div>
+    <div class="col-md-6">
+      <?= modul_landingpage(); ?>
+    </div>
   </div>
-  <div class="col-md-6">
-    <?= modul_landingpage(); ?>
-  </div>
-</div>
 
-<div class="row">
-  <div class="col-md-6">    
-    <?= modul_klienbaru('Klien Baru',5,'[nama] - <a href="https://wa.me/[whatsapp]" target="_blank">[whatsapp]</a> <small>([tgldaftar])</small>'); ?>
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">    
+      <?= modul_klienbaru('Klien Baru',5,'[nama] - <a href="https://wa.me/[whatsapp]" target="_blank">[whatsapp]</a> <small>([tgldaftar])</small>'); ?>
+    </div>
+    <div class="col-md-6">
+      <?= modul_akses(); ?>
+    </div>
   </div>
-  <div class="col-md-6">
-    <?= modul_akses(); ?>
-  </div>
-</div>
 
-<div class="row">
-  <div class="col">
-    <?= modul_grafikvisitor(); ?>
+  <div class="row g-3">
+    <div class="col-12">
+      <?= modul_grafikvisitor(); ?>
+    </div>
   </div>
 </div>
 

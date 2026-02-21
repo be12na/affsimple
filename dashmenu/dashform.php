@@ -38,13 +38,13 @@ if (isset($_POST['sort'])) {
 <form action="" method="post">
 <div class="card">	  
   <div class="card-body">
-	  <ul id="sortable" class="ui-sortable collection">
+	  <ul id="sortable">
 	  	<?php 	  	
 	  	$data = db_select("SELECT * FROM `sa_form` ORDER BY `ff_sort`");
 	  	foreach ($data as $data) :
 	  	?>
 	  		
-	  	<li class="row form-group ui-state-default ui-sortable-handle collection-item avatar z-depth-3">
+	  	<li class="row form-group collection-item">
 				<div class="col-9"><?php echo $data['ff_label'];?> <small>(<?php echo $data['ff_field'];?>)</small></div>				
 				<div class="col-3 text-end">
 				  <a href="form?id=<?php echo $data['ff_id'];?>"><i class="fa-solid fa-pen-to-square text-success"></i></a>			  
