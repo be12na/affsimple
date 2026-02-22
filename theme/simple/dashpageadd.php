@@ -53,23 +53,22 @@ window.metaPixelTestCode = '".$encodedTest."';
 }
 
 if (isset($_POST['metodelp']) && $_POST['metodelp'] != '') {
-	# URL page bisa kosong jika metode = Komponen HTML
 	$postUrlPage = $_POST['urlpage'] ?? '';
 	$postHtmlCode = $_POST['page_html'] ?? '';
 	$metaPixelId = $_POST['meta_pixel_id'] ?? '';
 	$metaPixelToken = $_POST['meta_pixel_token'] ?? '';
 	$metaPixelTest = $_POST['meta_pixel_test'] ?? '';
+	$metaTitle = $_POST['meta_title'] ?? '';
+	$metaDesc = $_POST['meta_description'] ?? '';
 
 	if ($_POST['metodelp'] == '4') {
 		$postHtmlCode = sa_inject_meta_pixel_html($postHtmlCode, $metaPixelId, $metaPixelToken, $metaPixelTest);
 	}
 
-	# Auto-create page_html column if not exists
 	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_html'")) {
 		db_query("ALTER TABLE `sa_page` ADD `page_html` LONGTEXT NULL");
 	}
 
-	# Auto-create Meta Pixel columns if not exists
 	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_pixel_id'")) {
 		db_query("ALTER TABLE `sa_page` ADD `page_meta_pixel_id` VARCHAR(191) NULL");
 	}
@@ -78,6 +77,12 @@ if (isset($_POST['metodelp']) && $_POST['metodelp'] != '') {
 	}
 	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_pixel_test'")) {
 		db_query("ALTER TABLE `sa_page` ADD `page_meta_pixel_test` VARCHAR(191) NULL");
+	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_title'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_title` VARCHAR(255) NULL");
+	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_desc'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_desc` TEXT NULL");
 	}
 
 	# Cek apakah page_url sudah dipakai page lain atau belum
@@ -93,12 +98,13 @@ if (isset($_POST['metodelp']) && $_POST['metodelp'] != '') {
 			`page_html` = '".cek($postHtmlCode)."',
 			`page_meta_pixel_id` = '".cek($metaPixelId)."',
 			`page_meta_pixel_token` = '".cek($metaPixelToken)."',
-			`page_meta_pixel_test` = '".cek($metaPixelTest)."'
+			`page_meta_pixel_test` = '".cek($metaPixelTest)."',
+			`page_meta_title` = '".cek($metaTitle)."',
+			`page_meta_desc` = '".cek($metaDesc)."'
 			WHERE `page_id`=".$_GET['edit']);
 	} else {
-		# Simpan di database
-		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`page_fr`,`page_html`,`page_meta_pixel_id`,`page_meta_pixel_token`,`page_meta_pixel_test`) VALUES 
-			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['alamatpage'])."','".cek($postUrlPage)."',".cek($_POST['metodelp']).",'" .serialize($_POST['fr'])."','".cek($postHtmlCode)."','".cek($metaPixelId)."','".cek($metaPixelToken)."','".cek($metaPixelTest)."')");
+		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`page_fr`,`page_html`,`page_meta_pixel_id`,`page_meta_pixel_token`,`page_meta_pixel_test`,`page_meta_title`,`page_meta_desc`) VALUES 
+			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['alamatpage'])."','".cek($postUrlPage)."',".cek($_POST['metodelp']).",'" .serialize($_POST['fr'])."','".cek($postHtmlCode)."','".cek($metaPixelId)."','".cek($metaPixelToken)."','".cek($metaPixelTest)."','".cek($metaTitle)."','".cek($metaDesc)."')");
 	}
 
 	if ($cek === false) {
@@ -184,6 +190,18 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 
 	  <!-- Fields for HTML method -->
 	  <div id="htmlFields" style="display:none;">
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Judul Tag</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="meta_title" value="<?= $page['page_meta_title'] ??= '';?>">
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Meta Description</label>
+	    <div class="col-sm-10">
+	      <textarea class="form-control" name="meta_description" rows="2"><?= $page['page_meta_desc'] ??= '';?></textarea>
+	    </div>
+	  </div>
 	  <div class="mb-3 row">
 	    <label class="col-sm-2 col-form-label">Meta Pixel ID</label>
 	    <div class="col-sm-10">

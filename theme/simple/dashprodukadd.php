@@ -150,6 +150,8 @@ if (isset($_POST['urlpage']) && !empty($_POST['urlpage']) && isset($_POST['judul
 	$metaPixelId = $_POST['meta_pixel_id'] ?? '';
 	$metaPixelToken = $_POST['meta_pixel_token'] ?? '';
 	$metaPixelTest = $_POST['meta_pixel_test'] ?? '';
+	$metaTitle = $_POST['meta_title'] ?? '';
+	$metaDesc = $_POST['meta_description'] ?? '';
 
 	if (isset($_POST['metodelp']) && $_POST['metodelp'] == '4') {
 		$postHtmlCode = sa_inject_meta_pixel_html($postHtmlCode, $metaPixelId, $metaPixelToken, $metaPixelTest);
@@ -172,6 +174,12 @@ if (isset($_POST['urlpage']) && !empty($_POST['urlpage']) && isset($_POST['judul
 	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_pixel_test'")) {
 		db_query("ALTER TABLE `sa_page` ADD `page_meta_pixel_test` VARCHAR(191) NULL");
 	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_title'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_title` VARCHAR(255) NULL");
+	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_desc'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_desc` TEXT NULL");
+	}
 
 	if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 		# Edit Page
@@ -188,12 +196,14 @@ if (isset($_POST['urlpage']) && !empty($_POST['urlpage']) && isset($_POST['judul
 			`page_html` = '".cek($postHtmlCode)."',
 			`page_meta_pixel_id` = '".cek($metaPixelId)."',
 			`page_meta_pixel_token` = '".cek($metaPixelToken)."',
-			`page_meta_pixel_test` = '".cek($metaPixelTest)."'
+			`page_meta_pixel_test` = '".cek($metaPixelTest)."',
+			`page_meta_title` = '".cek($metaTitle)."',
+			`page_meta_desc` = '".cek($metaDesc)."'
 			".$editgambar."
 			WHERE `page_id`=".$_GET['edit']);
 	} else {
-		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`pro_harga`,`pro_komisi`,`pro_file`,`pro_img`,`page_fr`,`page_html`,`page_meta_pixel_id`,`page_meta_pixel_token`,`page_meta_pixel_test`) VALUES 
-			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['urlpage'])."','".cek($_POST['iframe'] ?? '')."',".cek($_POST['metodelp']).",	".numonly($_POST['harga']).",'".$dbkomisi."','".cek($_POST['namafile'])."','".$gambar."','".serialize($_POST['fr'])."','".cek($postHtmlCode)."','".cek($metaPixelId)."','".cek($metaPixelToken)."','".cek($metaPixelTest)."')");
+		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`pro_harga`,`pro_komisi`,`pro_file`,`pro_img`,`page_fr`,`page_html`,`page_meta_pixel_id`,`page_meta_pixel_token`,`page_meta_pixel_test`,`page_meta_title`,`page_meta_desc`) VALUES 
+			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['urlpage'])."','".cek($_POST['iframe'] ?? '')."',".cek($_POST['metodelp']).",	".numonly($_POST['harga']).",'".$dbkomisi."','".cek($_POST['namafile'])."','".$gambar."','".serialize($_POST['fr'])."','".cek($postHtmlCode)."','".cek($metaPixelId)."','".cek($metaPixelToken)."','".cek($metaPixelTest)."','".cek($metaTitle)."','".cek($metaDesc)."')");
 	}
 
 
@@ -290,7 +300,19 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 
 	  <div id="htmlFields" style="display:none;">
 	  <div class="mb-3 row">
-	    <label class="col-sm-2 col-form-label">Meta Pixel ID</label>
+	    <label class="col-sm-2 col-form-label">Judul Tag</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="meta_title" value="<?= $page['page_meta_title'] ??= '';?>">
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Meta Description</label>
+	    <div class="col-sm-10">
+	      <textarea class="form-control" name="meta_description" rows="2"><?= $page['page_meta_desc'] ??= '';?></textarea>
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label"></label>Meta Pixel ID</label>
 	    <div class="col-sm-10">
 	      <input type="text" class="form-control" name="meta_pixel_id" value="<?= $page['page_meta_pixel_id'] ??= '';?>">
 	    </div>
