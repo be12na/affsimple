@@ -312,7 +312,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    </div>
 	  </div>
 	  <div class="mb-3 row">
-	    <label class="col-sm-2 col-form-label"></label>Meta Pixel ID</label>
+	    <label class="col-sm-2 col-form-label">Meta Pixel ID</label>
 	    <div class="col-sm-10">
 	      <input type="text" class="form-control" name="meta_pixel_id" value="<?= $page['page_meta_pixel_id'] ??= '';?>">
 	    </div>
