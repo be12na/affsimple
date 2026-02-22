@@ -181,6 +181,7 @@ if (isset($_POST['judulweb']) && !empty($_POST['judulweb'])) {
 					    	<?php
 					    	$metode = array(
 				    		1 => 'Gunakan iFrame'
+					    	);
 
 					    	if (isset($settings['url_produk']) && !empty($settings['url_produk'])) {
 					    		$metode['produk'] = 'Halaman Produk';
