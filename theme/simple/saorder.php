@@ -252,6 +252,97 @@ if (isset($slug[2]) && !empty($slug[2])) :
 			if (isset($_POST['payment']) && !empty($_POST['payment'])) {
 				if ($_POST['payment'] == 'manual') {
 					$order_trx = 'manual';
+				} elseif ($_POST['payment'] == 'duitku') {
+					$merchantCode = $settings['duitku_merchant_code'] ?? '';
+					$apiKeyDuitku = $settings['duitku_api_key'] ?? '';
+					if (!empty($merchantCode) && !empty($apiKeyDuitku)) {
+						$timestamp = round(microtime(true) * 1000);
+						$signature = hash('sha256', $merchantCode.$timestamp.$apiKeyDuitku);
+						if (isset($settings['duitku_sandbox']) && $settings['duitku_sandbox'] == 1) {
+							$serverUrl = 'https://api-sandbox.duitku.com/api/merchant/createInvoice';
+						} else {
+							$serverUrl = 'https://api-prod.duitku.com/api/merchant/createInvoice';
+						}
+						$merchantOrderId = str_pad($lastidorder,4,0,STR_PAD_LEFT);
+						$paymentAmount = (int)$order['pro_harga'];
+						$emailCust = $email;
+						$phoneCust = $whatsapp;
+						$nameCust = $nama;
+						$address = array(
+							'firstName' => $nameCust,
+							'lastName' => '',
+							'address' => '',
+							'city' => '',
+							'postalCode' => '',
+							'phone' => $phoneCust,
+							'countryCode' => 'ID'
+						);
+						$customerDetail = array(
+							'firstName' => $nameCust,
+							'lastName' => '',
+							'email' => $emailCust,
+							'phoneNumber' => $phoneCust,
+							'billingAddress' => $address,
+							'shippingAddress' => $address
+						);
+						$item1 = array(
+							'name' => $order['page_judul'],
+							'price' => $paymentAmount,
+							'quantity' => 1
+						);
+						$params = array(
+							'paymentAmount' => $paymentAmount,
+							'merchantOrderId' => $merchantOrderId,
+							'productDetails' => $order['page_judul'],
+							'additionalParam' => '',
+							'merchantUserInfo' => '',
+							'paymentMethod' => '',
+							'customerVaName' => $nameCust,
+							'email' => $emailCust,
+							'phoneNumber' => $phoneCust,
+							'itemDetails' => array($item1),
+							'customerDetail' => $customerDetail,
+							'callbackUrl' => $weburl.'duitkucall.php',
+							'returnUrl' => $weburl.'thanks',
+							'expiryPeriod' => 60
+						);
+						$ch = curl_init();
+						curl_setopt_array($ch, array(
+							CURLOPT_URL => $serverUrl,
+							CURLOPT_POST => true,
+							CURLOPT_RETURNTRANSFER => true,
+							CURLOPT_HEADER => false,
+							CURLOPT_HTTPHEADER => array(
+								'Content-Type: application/json',
+								'Accept: application/json',
+								'x-duitku-signature: '.$signature,
+								'x-duitku-timestamp: '.$timestamp,
+								'x-duitku-merchantcode: '.$merchantCode
+							),
+							CURLOPT_POSTFIELDS => json_encode($params),
+							CURLOPT_FAILONERROR => false,
+							CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+						));
+						$response = curl_exec($ch);
+						$errorCurl = curl_error($ch);
+						curl_close($ch);
+						if (!empty($errorCurl)) {
+							$order_trx = '';
+							$error = $errorCurl;
+						} else {
+							$resultDuitku = json_decode($response, true);
+							if (isset($resultDuitku['statusCode']) && $resultDuitku['statusCode'] == '00') {
+								$order_trx = 'duitku:'.$resultDuitku['reference'].':'.$resultDuitku['paymentUrl'];
+								$duitkuPaymentUrl = $resultDuitku['paymentUrl'];
+							} else {
+								$order_trx = '';
+								$error = $resultDuitku['statusMessage'] ?? 'Gagal membuat transaksi Duitku';
+							}
+						}
+					} else {
+						$order_trx = '';
+						$error = 'Konfigurasi Duitku belum lengkap.';
+					}
 				} else {
 					# Tripay Create Start
 					$apiKey       = $settings['tripay_api'];
@@ -326,7 +417,11 @@ if (isset($slug[2]) && !empty($slug[2])) :
 				);
 				sa_notif('order',$idmember,$datalain);
 				# Redirect ke invoice
-				header("Location:".$weburl."invoice/".$idorder);
+				if (isset($duitkuPaymentUrl) && !empty($duitkuPaymentUrl)) {
+					header("Location:".$duitkuPaymentUrl);
+				} else {
+					header("Location:".$weburl."invoice/".$idorder);
+				}
 			} else {
 				$error = db_error();
 			}
@@ -505,6 +600,18 @@ if (isset($slug[2]) && !empty($slug[2])) :
 						    </label>
 						  </div>
 				    </li>'; 
+				  }
+
+				  if (isset($settings['duitku_merchant_code']) && !empty($settings['duitku_merchant_code']) && isset($settings['duitku_api_key']) && !empty($settings['duitku_api_key'])) {
+				  	echo '
+				    <li class="list-group-item">
+					    <div class="form-check">
+					    	<input class="form-check-input" type="radio" name="payment" value="duitku" required>
+					    	<label class="form-check-label" for="flexCheckChecked">
+						    <strong>Duitku Payment Gateway</strong>
+						    </label>
+						  </div>
+				    </li>';
 				  }
 
 				  if (isset($settings['tripay_merchant']) && !empty($settings['tripay_merchant'])) {

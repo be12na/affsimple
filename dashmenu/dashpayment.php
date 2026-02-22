@@ -31,6 +31,9 @@ if (isset($_POST) && count($_POST) > 0) {
 	if (!isset($_POST['tripay_sandbox'])) {
 		$newsettings['tripay_sandbox'] = 0;
 	}
+	if (!isset($_POST['duitku_sandbox'])) {
+		$newsettings['duitku_sandbox'] = 0;
+	}
 
 	$settings = updatesettings($newsettings);
 	if ($settings === false) {
@@ -120,6 +123,40 @@ if (isset($_POST) && count($_POST) > 0) {
 	  </div>
 	  <div class="mb-3 row">
 	  	<div class="col">Dapatkan akun <a href="https://tripay.co.id/?ref=TP28329" target="_blank">Tripay di sini</a></div>
+	  </div>
+	</div>
+</div>
+<div class="card mt-3">
+  <div class="card-header" onclick="toggleCardBody('duitku')">
+    <i class="fas fa-caret-down"></i> Integrasi Payment Gateway Duitku
+  </div>
+  <div class="card-body" id="duitku">
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Merchant Code</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="duitku_merchant_code" value="<?= $settings['duitku_merchant_code'] ??= '';?>">
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">API Key</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="duitku_api_key" value="<?= $settings['duitku_api_key'] ??= '';?>">
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">URL Callback</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" value="<?= $weburl;?>duitkucall.php" disabled>
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Mode Sandbox</label>
+	    <div class="col-sm-10">
+	    	<div class="form-check">
+		      <input type="checkbox" class="form-check-input" name="duitku_sandbox" value="1" 
+		      <?php if (isset($settings['duitku_sandbox']) && $settings['duitku_sandbox'] == 1) { echo ' checked'; } ?>>
+		    </div>
+	    </div>
 	  </div>
 	</div>
 </div>

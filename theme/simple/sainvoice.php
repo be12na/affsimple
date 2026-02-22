@@ -63,7 +63,7 @@ if (isset($slug[2]) && is_numeric($slug[2])) :
         <div class="row mt-5">
           <div class="col-md-5 p-md-5 mb-3">
           <?php
-          if ($order['order_status'] == 0) {
+            if ($order['order_status'] == 0) {
             if (isset($settings['tripay_sandbox']) && $settings['tripay_sandbox'] == 1) {
               $urlapi = 'api-sandbox';
             } else {
@@ -83,6 +83,15 @@ if (isset($slug[2]) && is_numeric($slug[2])) :
                 $manual;
               }            
             } else {
+              if (substr($order['order_trx'],0,7) == 'duitku:') {
+                $partsDuitku = explode(':',$order['order_trx'],3);
+                $urlDuitku = $partsDuitku[2] ?? '';
+                if (!empty($urlDuitku)) {
+                  $detil = '<a href="'.$urlDuitku.'" target="_blank" class="btn btn-success">Lanjutkan Pembayaran</a>';
+                } else {
+                  include('payment.php');
+                }
+              } else {
               $apiKey = $settings['tripay_api'];
               $payload = ['reference' => $order['order_trx']];
 
@@ -170,6 +179,7 @@ if (isset($slug[2]) && is_numeric($slug[2])) :
               } else {
                 include('payment.php');
               }              
+              }
             }
           }
 

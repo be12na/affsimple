@@ -8,6 +8,89 @@ if (isset($_GET['pay']) && !empty($_GET['pay'])) {
       db_query("UPDATE `sa_order` SET `order_trx`='manual' WHERE `order_id`=".$order['order_id']);
       $sukses = 1;
     }
+  } elseif ($_GET['pay'] == 'duitku') {
+    if (isset($settings['duitku_merchant_code']) && !empty($settings['duitku_merchant_code']) && isset($settings['duitku_api_key']) && !empty($settings['duitku_api_key'])) {
+      $merchantCode = $settings['duitku_merchant_code'];
+      $apiKeyDuitku = $settings['duitku_api_key'];
+      $timestamp = round(microtime(true) * 1000);
+      $signature = hash('sha256', $merchantCode.$timestamp.$apiKeyDuitku);
+      if (isset($settings['duitku_sandbox']) && $settings['duitku_sandbox'] == 1) {
+        $serverUrl = 'https://api-sandbox.duitku.com/api/merchant/createInvoice';
+      } else {
+        $serverUrl = 'https://api-prod.duitku.com/api/merchant/createInvoice';
+      }
+      $merchantOrderId = str_pad($order['order_id'],4,0,STR_PAD_LEFT);
+      $paymentAmount = (int)$order['order_harga'];
+      $emailCust = $order['mem_email'];
+      $phoneCust = $order['mem_whatsapp'];
+      $nameCust = $order['mem_nama'];
+      $address = array(
+        'firstName' => $nameCust,
+        'lastName' => '',
+        'address' => '',
+        'city' => '',
+        'postalCode' => '',
+        'phone' => $phoneCust,
+        'countryCode' => 'ID'
+      );
+      $customerDetail = array(
+        'firstName' => $nameCust,
+        'lastName' => '',
+        'email' => $emailCust,
+        'phoneNumber' => $phoneCust,
+        'billingAddress' => $address,
+        'shippingAddress' => $address
+      );
+      $item1 = array(
+        'name' => $order['page_judul'],
+        'price' => $paymentAmount,
+        'quantity' => 1
+      );
+      $params = array(
+        'paymentAmount' => $paymentAmount,
+        'merchantOrderId' => $merchantOrderId,
+        'productDetails' => $order['page_judul'],
+        'additionalParam' => '',
+        'merchantUserInfo' => '',
+        'paymentMethod' => '',
+        'customerVaName' => $nameCust,
+        'email' => $emailCust,
+        'phoneNumber' => $phoneCust,
+        'itemDetails' => array($item1),
+        'customerDetail' => $customerDetail,
+        'callbackUrl' => $weburl.'duitkucall.php',
+        'returnUrl' => $weburl.'thanks',
+        'expiryPeriod' => 60
+      );
+      $ch = curl_init();
+      curl_setopt_array($ch, array(
+        CURLOPT_URL => $serverUrl,
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER => false,
+        CURLOPT_HTTPHEADER => array(
+          'Content-Type: application/json',
+          'Accept: application/json',
+          'x-duitku-signature: '.$signature,
+          'x-duitku-timestamp: '.$timestamp,
+          'x-duitku-merchantcode: '.$merchantCode
+        ),
+        CURLOPT_POSTFIELDS => json_encode($params),
+        CURLOPT_FAILONERROR => false,
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+      ));
+      $response = curl_exec($ch);
+      $errorCurl = curl_error($ch);
+      curl_close($ch);
+      if (empty($errorCurl)) {
+        $resultDuitku = json_decode($response, true);
+        if (isset($resultDuitku['statusCode']) && $resultDuitku['statusCode'] == '00') {
+          db_query("UPDATE `sa_order` SET `order_trx`='".cek('duitku:'.$resultDuitku['reference'].':'.$resultDuitku['paymentUrl'])."' WHERE `order_id`=".$order['order_id']);
+          $sukses = 2;
+          $duitkuPaymentUrl = $resultDuitku['paymentUrl'];
+        }
+      }
+    }
   } else {
     $apiKey       = $settings['tripay_api'];
     $privateKey   = $settings['tripay_private'];
@@ -67,12 +150,17 @@ if (isset($_GET['pay']) && !empty($_GET['pay'])) {
   }
 
   if (isset($sukses)) {
-    echo '
+    if ($sukses == 2 && isset($duitkuPaymentUrl) && !empty($duitkuPaymentUrl)) {
+      echo '
       <script type="text/javascript">
-      <!--
-      window.location = "'.$weburl.'invoice/'.$order['order_id'].'"
-      //-->
+      window.location = "'.$duitkuPaymentUrl.'"
       </script>';
+    } else {
+      echo '
+      <script type="text/javascript">
+      window.location = "'.$weburl.'invoice/'.$order['order_id'].'"
+      </script>';
+    }
   }
 } else {
   echo '
@@ -83,6 +171,12 @@ if (isset($_GET['pay']) && !empty($_GET['pay'])) {
     <img src="'.$weburl.'img/bank-transfer.jpg" alt="" style="width:100px; float:left; margin-right:10px"/>
     <strong>Transfer Manual</strong>
     </a>'; 
+  }
+  if (isset($settings['duitku_merchant_code']) && !empty($settings['duitku_merchant_code']) && isset($settings['duitku_api_key']) && !empty($settings['duitku_api_key'])) {
+    echo '
+    <a href="?pay=duitku" class="list-group-item list-group-item-action">
+    <strong>Duitku Payment Gateway</strong>
+    </a>';
   }
   if (isset($settings['tripay_merchant']) && !empty($settings['tripay_merchant'])) {
     if (isset($settings['tripay_sandbox']) && $settings['tripay_sandbox'] == 1) {
