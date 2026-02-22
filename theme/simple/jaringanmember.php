@@ -7,7 +7,7 @@ $statusClass = array('sa-badge-pending','sa-badge-free','sa-badge-premium');
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 	// AJAX: Load child nodes for tree
 	$id = $_GET['id'];	
-	$data = db_select("SELECT * FROM `sa_sponsor` LEFT JOIN `sa_member` ON `sa_member`.`mem_id`=`sa_sponsor`.`sp_mem_id` WHERE `sp_sponsor_id`=".$id);
+	$data = db_select("SELECT * FROM `sa_sponsor` LEFT JOIN `sa_member` ON `sa_member`.`mem_id`=`sa_sponsor`.`sp_mem_id` WHERE `sp_sponsor_id`=".$id." AND `sa_member`.`mem_status` > 0");
 	if (count($data) > 0) {
 		echo '<ul class="sa-tree sa-tree-children" style="display:block;">';
 		foreach ($data as $member) {

@@ -277,7 +277,7 @@ $head['scripthead'] = '
 
 showheader($head);
 
-$data = db_select("SELECT * FROM `sa_sponsor` LEFT JOIN `sa_member` ON `sa_member`.`mem_id`=`sa_sponsor`.`sp_mem_id` WHERE `sp_sponsor_id`=".$iduser);
+$data = db_select("SELECT * FROM `sa_sponsor` LEFT JOIN `sa_member` ON `sa_member`.`mem_id`=`sa_sponsor`.`sp_mem_id` WHERE `sp_sponsor_id`=".$iduser." AND `sa_member`.`mem_status` > 0");
 
 // Count stats: hanya member aktif (mem_status > 0)
 $totalMember = 0;
