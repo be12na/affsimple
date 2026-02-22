@@ -279,7 +279,7 @@ showheader($head);
 
 $data = db_select("SELECT * FROM `sa_sponsor` LEFT JOIN `sa_member` ON `sa_member`.`mem_id`=`sa_sponsor`.`sp_mem_id` WHERE `sp_sponsor_id`=".$iduser);
 
-// Count stats berdasarkan seluruh jaringan (semua level) menggunakan sp_network
+// Count stats: hanya member aktif (mem_status > 0)
 $totalMember = 0;
 $freeMember = 0;
 $premiumMember = 0;
@@ -290,21 +290,25 @@ $stats = db_select("SELECT `mem_status`, COUNT(*) AS `jumlah`
 	GROUP BY `mem_status`");
 if ($stats !== false && count($stats) > 0) {
 	foreach ($stats as $row) {
-		$totalMember += (int)$row['jumlah'];
 		if ($row['mem_status'] == 1) {
 			$freeMember += (int)$row['jumlah'];
 		} elseif ($row['mem_status'] >= 2) {
 			$premiumMember += (int)$row['jumlah'];
 		}
 	}
+	$totalMember = $freeMember + $premiumMember;
 }
 
 // Fallback: jika belum ada data jaringan di sp_network, pakai direct downline saja
 if ($totalMember == 0 && is_array($data) && count($data) > 0) {
-	$totalMember = count($data);
 	foreach ($data as $row) {
-		if ($row['mem_status'] == 1) $freeMember++;
-		if ($row['mem_status'] == 2) $premiumMember++;
+		if ($row['mem_status'] == 1) {
+			$freeMember++;
+			$totalMember++;
+		} elseif ($row['mem_status'] >= 2) {
+			$premiumMember++;
+			$totalMember++;
+		}
 	}
 }
 ?>
