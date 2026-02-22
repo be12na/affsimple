@@ -282,7 +282,24 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	    </div>	    
 	  </div>
 
-		<?php endfor;?>	  
+		<?php endfor;?>	
+
+		<div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Point</label>
+	    <div class="col-sm-5">
+	      <div class="input-group">
+		      <span class="input-group-text" id="basic-addon3">Premium</span>
+		      <input type="number" class="form-control" name="komisi[point][2]" value="<?= $komisi['point'][2] ??= '';?>">
+		    </div>	    	
+	    </div>
+	    <div class="col-sm-5">
+	      <div class="input-group">
+		      <span class="input-group-text" id="basic-addon3">Free</span>
+		      <input type="number" class="form-control" name="komisi[point][1]" value="<?= $komisi['point'][1] ??= '';?>">
+		    </div>	    	
+	    </div>	    
+	  </div>
+
 	  <input type="submit" class="btn btn-success" name="" value=" SIMPAN ">
 	</div>
 </div>
