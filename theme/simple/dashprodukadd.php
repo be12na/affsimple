@@ -1,4 +1,58 @@
 <?php 
+if (!function_exists('sa_inject_meta_pixel_html')) {
+	function sa_inject_meta_pixel_html($html, $pixelId, $pixelToken, $pixelTest) {
+		$markerStart = '<meta name="sa-meta-pixel" content="start">';
+		$markerEnd = '<meta name="sa-meta-pixel" content="end">';
+
+		$startPos = strpos($html, $markerStart);
+		$endPos = strpos($html, $markerEnd);
+		if ($startPos !== false && $endPos !== false && $endPos > $startPos) {
+			$afterEnd = $endPos + strlen($markerEnd);
+			$html = substr($html, 0, $startPos).substr($html, $afterEnd);
+		}
+
+		$pixelId = trim($pixelId);
+		$pixelToken = trim($pixelToken);
+		$pixelTest = trim($pixelTest);
+
+		if ($pixelId === '') {
+			return $html;
+		}
+
+		$encodedId = addslashes($pixelId);
+		$encodedToken = addslashes($pixelToken);
+		$encodedTest = addslashes($pixelTest);
+		$testQuery = $pixelTest !== '' ? '&test_event_code='.rawurlencode($pixelTest) : '';
+
+		$snippet = $markerStart."\n";
+		$snippet .= "<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src='https://connect.facebook.net/en_US/fbevents.js';s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '".$encodedId."');
+fbq('track', 'PageView');
+</script>
+";
+		$snippet .= "<noscript><img height=\"1\" width=\"1\" style=\"display:none\" src=\"https://www.facebook.com/tr?id=".$encodedId."&ev=PageView&noscript=1".$testQuery."\"/></noscript>\n";
+		$snippet .= "<script>
+window.metaPixelToken = '".$encodedToken."';
+window.metaPixelTestCode = '".$encodedTest."';
+</script>\n";
+		$snippet .= $markerEnd;
+
+		$posHead = stripos($html, '</head>');
+		if ($posHead !== false) {
+			return substr($html, 0, $posHead)."\n".$snippet."\n".substr($html, $posHead);
+		}
+		$posBody = stripos($html, '</body>');
+		if ($posBody !== false) {
+			return substr($html, 0, $posBody)."\n".$snippet."\n".substr($html, $posBody);
+		}
+		return $html."\n".$snippet;
+	}
+}
 if (!defined('IS_IN_SCRIPT')) { die(); exit(); }
 if ($datamember['mem_role'] < 5) { die(); exit(); }
 $head['pagetitle']='Manage Produk';
@@ -92,14 +146,31 @@ if (isset($_POST['urlpage']) && !empty($_POST['urlpage']) && isset($_POST['judul
     }
   }
 
+	$postHtmlCode = $_POST['page_html'] ?? '';
+	$metaPixelId = $_POST['meta_pixel_id'] ?? '';
+	$metaPixelToken = $_POST['meta_pixel_token'] ?? '';
+	$metaPixelTest = $_POST['meta_pixel_test'] ?? '';
+
+	if (isset($_POST['metodelp']) && $_POST['metodelp'] == '4') {
+		$postHtmlCode = sa_inject_meta_pixel_html($postHtmlCode, $metaPixelId, $metaPixelToken, $metaPixelTest);
+	}
+
 	foreach ($_POST['komisi'] as $key => $value) {
 		$komisi[$key] = numonly($value);
 	}
 	$dbkomisi = serialize($komisi);
 
-	# Auto-create page_html column if not exists
 	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_html'")) {
 		db_query("ALTER TABLE `sa_page` ADD `page_html` LONGTEXT NULL");
+	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_pixel_id'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_pixel_id` VARCHAR(191) NULL");
+	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_pixel_token'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_pixel_token` VARCHAR(191) NULL");
+	}
+	if (!db_var("SHOW COLUMNS FROM `sa_page` LIKE 'page_meta_pixel_test'")) {
+		db_query("ALTER TABLE `sa_page` ADD `page_meta_pixel_test` VARCHAR(191) NULL");
 	}
 
 	if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
@@ -114,13 +185,15 @@ if (isset($_POST['urlpage']) && !empty($_POST['urlpage']) && isset($_POST['judul
 			`pro_komisi` = '".$dbkomisi."',
 			`pro_file` = '".cek($_POST['namafile'])."',
 			`page_fr` = '".serialize($_POST['fr'])."',
-			`page_html` = '".cek($_POST['page_html'] ?? '')."'
+			`page_html` = '".cek($postHtmlCode)."',
+			`page_meta_pixel_id` = '".cek($metaPixelId)."',
+			`page_meta_pixel_token` = '".cek($metaPixelToken)."',
+			`page_meta_pixel_test` = '".cek($metaPixelTest)."'
 			".$editgambar."
 			WHERE `page_id`=".$_GET['edit']);
 	} else {
-		# Simpan di database
-		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`pro_harga`,`pro_komisi`,`pro_file`,`pro_img`,`page_fr`,`page_html`) VALUES 
-			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['urlpage'])."','".cek($_POST['iframe'] ?? '')."',".cek($_POST['metodelp']).",	".numonly($_POST['harga']).",'".$dbkomisi."','".cek($_POST['namafile'])."','".$gambar."','".serialize($_POST['fr'])."','".cek($_POST['page_html'] ?? '')."')");
+		$cek = db_query("INSERT INTO `sa_page` (`page_judul`,`page_diskripsi`,`page_url`,`page_iframe`,`page_method`,`pro_harga`,`pro_komisi`,`pro_file`,`pro_img`,`page_fr`,`page_html`,`page_meta_pixel_id`,`page_meta_pixel_token`,`page_meta_pixel_test`) VALUES 
+			('".cek($_POST['judulpage'])."','".cek($_POST['diskripsipage'])."','".cekurlpage($_POST['urlpage'])."','".cek($_POST['iframe'] ?? '')."',".cek($_POST['metodelp']).",	".numonly($_POST['harga']).",'".$dbkomisi."','".cek($_POST['namafile'])."','".$gambar."','".serialize($_POST['fr'])."','".cek($postHtmlCode)."','".cek($metaPixelId)."','".cek($metaPixelToken)."','".cek($metaPixelTest)."')");
 	}
 
 
@@ -215,8 +288,25 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 	  <div id="urlFields">
 	  </div>
 
-	  <!-- Fields for HTML method -->
 	  <div id="htmlFields" style="display:none;">
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Meta Pixel ID</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="meta_pixel_id" value="<?= $page['page_meta_pixel_id'] ??= '';?>">
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Meta Pixel Token</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="meta_pixel_token" value="<?= $page['page_meta_pixel_token'] ??= '';?>">
+	    </div>
+	  </div>
+	  <div class="mb-3 row">
+	    <label class="col-sm-2 col-form-label">Meta Pixel Test Event Code</label>
+	    <div class="col-sm-10">
+	      <input type="text" class="form-control" name="meta_pixel_test" value="<?= $page['page_meta_pixel_test'] ??= '';?>">
+	    </div>
+	  </div>
 	  <div class="mb-3 row">
 	    <label class="col-sm-2 col-form-label">Kode HTML</label>
 	    <div class="col-sm-10">
